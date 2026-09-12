@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back" href="/">&larr; New analysis</a>
+<div class="card">
+  <h2>{{ result.target }} <span class="muted" style="font-weight:400;">(NEPSE)</span></h2>
+  {% set risk = result.risk %}
+  {% if risk.ok %}
+    <span class="badge {{ risk.risk_level }}">{{ risk.risk_level|upper }} RISK</span>
+  {% endif %}
+  {% set status = result.raw.market_status %}
+  {% if status.ok %}
+    <span class="badge {{ 'low' if status.is_open else 'medium' }}">MARKET {{ 'OPEN' if status.is_open else 'CLOSED' }}</span>
+  {% endif %}
+  <p class="muted">Run #{{ run_id }}</p>
+</div>
+
+<div class="card">
+  <h3>Final report</h3>
+  <div class="report">{{ result.final_report }}</div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3>Technical</h3>
+    {% if result.analysis.technical.ok %}
+      <table>
+        <tr><td>Last price</td><td>{{ result.analysis.technical.last_price }}</td></tr>
+        <tr><td>SMA 20 / 50</td><td>{{ result.analysis.technical.sma_20 }} / {{ result.analysis.technical.sma_50 }}</td></tr>
+        <tr><td>RSI (14)</td><td>{{ result.analysis.technical.rsi_14 }}</td></tr>
+        <tr><td>Trend</td><td>{{ result.analysis.technical.trend }}</td></tr>
+        <tr><td>Period return</td><td>{{ result.analysis.technical.period_return_pct }}%</td></tr>
+      </table>
+    {% else %}
+      <p class="muted">{{ result.analysis.technical.error }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Forecast (5-step)</h3>
+    {% if result.forecast.ok %}
+      <table>
+        <tr><td>Model</td><td>{{ result.forecast.model }}</td></tr>
+        <tr><td>Predicted next</td><td>{{ result.forecast.predicted_next }}</td></tr>
+        <tr><td>Path</td><td>{{ result.forecast.predicted_path }}</td></tr>
+        <tr><td>Confidence</td><td>{{ result.forecast.confidence }}</td></tr>
+      </table>
+    {% else %}
+      <p class="muted">{{ result.forecast.error }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Risk metrics</h3>
+    {% if result.risk.ok %}
+      <table>
+        {% for k, v in result.risk.metrics.items() %}
+        <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p class="muted">{{ result.risk.error }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Sentiment</h3>
+    {% if result.analysis.sentiment %}
+      <p><strong>{{ result.analysis.sentiment.label }}</strong> (score: {{ result.analysis.sentiment.score }})</p>
+      <p class="muted">{{ result.analysis.sentiment.rationale }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h3>Sector context</h3>
+  <p>{{ result.analysis.sector.commentary if result.analysis.sector.ok else result.analysis.sector.error }}</p>
+</div>
+
+<div class="card">
+  <h3>NEPSE market breadth today</h3>
+  {% set breadth = result.raw.market_breadth %}
+  {% if breadth.ok %}
+    <table>
+      <tr><td>Advancers</td><td>{{ breadth.advancers }}</td></tr>
+      <tr><td>Decliners</td><td>{{ breadth.decliners }}</td></tr>
+      <tr><td>Unchanged</td><td>{{ breadth.unchanged }}</td></tr>
+      <tr><td>Average % change</td><td>{{ breadth.avg_percent_change }}</td></tr>
+      <tr><td>Total turnover</td><td>{{ breadth.total_turnover }}</td></tr>
+    </table>
+  {% else %}
+    <p class="muted">{{ breadth.error }}</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Raw agent data (debug)</h3>
+  <details><summary class="muted">Expand</summary>
+    <pre style="white-space:pre-wrap; font-size:0.8rem;">{{ result.raw }}</pre>
+  </details>
+</div>
+{% endblock %}
